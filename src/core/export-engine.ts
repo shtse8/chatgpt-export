@@ -1,4 +1,5 @@
 import { type Config, DEFAULT_CONFIG } from './config'
+import { EventEmitter } from './event-emitter'
 import { sleep, log, warn, error } from './utils'
 
 export interface ConversationSummary {
@@ -36,10 +37,19 @@ export interface Progress {
 
 export type ProgressCallback = (progress: Progress) => void
 
+/** Events emitted by the export engine. */
+export type ExportEngineEvents = {
+  progress: [Progress]
+  done: [ExportResult]
+  error: [Error]
+}
+
 /**
  * Core export engine — fetches all ChatGPT conversations via the backend API.
+ *
+ * Emits typed events via EventEmitter and also supports a legacy callback.
  */
-export class ExportEngine {
+export class ExportEngine extends EventEmitter<ExportEngineEvents> {
   private config: Config
   private progress: Progress
   private onProgress?: ProgressCallback
@@ -47,6 +57,7 @@ export class ExportEngine {
   private headers: Record<string, string> = {}
 
   constructor(config: Partial<Config> = {}, onProgress?: ProgressCallback) {
+    super()
     this.config = { ...DEFAULT_CONFIG, ...config }
     this.onProgress = onProgress
     this.progress = {
@@ -67,7 +78,7 @@ export class ExportEngine {
     this.aborted = false
     this.progress.startedAt = Date.now()
     this.progress.status = 'authenticating'
-    this.emit()
+    this.emitProgress()
 
     try {
       // Step 1: Authenticate
@@ -76,14 +87,14 @@ export class ExportEngine {
 
       // Step 2: List all conversations
       this.progress.status = 'listing'
-      this.emit()
+      this.emitProgress()
       const conversations = await this.listAll()
       this.progress.total = conversations.length
 
       if (conversations.length === 0) {
         warn('No conversations found.')
         this.progress.status = 'done'
-        this.emit()
+        this.emitProgress()
         return null
       }
 
@@ -91,7 +102,7 @@ export class ExportEngine {
 
       // Step 3: Download each conversation
       this.progress.status = 'downloading'
-      this.emit()
+      this.emitProgress()
       const results = await this.downloadAll(conversations)
 
       // Step 4: Build export
@@ -112,7 +123,8 @@ export class ExportEngine {
       }
 
       this.progress.status = 'done'
-      this.emit()
+      this.emitProgress()
+      this.emit('done', exportData)
 
       return exportData
     } catch (err) {
@@ -120,7 +132,8 @@ export class ExportEngine {
       error(msg)
       this.progress.status = 'error'
       this.progress.error = msg
-      this.emit()
+      this.emitProgress()
+      this.emit('error', err instanceof Error ? err : new Error(msg))
       return null
     }
   }
@@ -136,7 +149,7 @@ export class ExportEngine {
       error('Not logged in. Please sign in to ChatGPT first.')
       this.progress.status = 'error'
       this.progress.error = 'Not logged in'
-      this.emit()
+      this.emitProgress()
       return null
     }
 
@@ -265,7 +278,7 @@ export class ExportEngine {
       // Update rate
       const elapsed = (Date.now() - this.progress.startedAt) / 1000
       this.progress.rate = elapsed > 0 ? ((i + 1) / elapsed) * 60 : 0
-      this.emit()
+      this.emitProgress()
 
       // Rate limiting
       if (i % this.config.downloadBatch === 0) {
@@ -276,8 +289,10 @@ export class ExportEngine {
     return results
   }
 
-  private emit(): void {
-    this.onProgress?.({ ...this.progress })
+  private emitProgress(): void {
+    const snapshot = { ...this.progress }
+    this.onProgress?.(snapshot)
+    this.emit('progress', snapshot)
   }
 }
 
