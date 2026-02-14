@@ -8,6 +8,7 @@
   "scripts": {
     "build": "bun run scripts/build.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "lint": "eslint src/",
     "zip": "cd dist/extension && zip -r ../../chatgpt-export.zip .",
     "package": "bun run build && bun run zip"
@@ -18,6 +19,7 @@
     "sharp": "^0.34.5",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0",
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "vitest": "^4.0.18"
   }
 }
