@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+  <title>ChatGPT Export</title>
+</head>
+<body>
+  <div class="container">
+    <h1>💬 ChatGPT Export</h1>
+    <p class="desc">Export all conversations to JSON</p>
+
+    <div class="progress-section" id="progressSection" hidden>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="stats">
+        <span id="downloadedCount">0</span> / <span id="totalCount">0</span>
+        <span class="separator">·</span>
+        <span id="rateText">0/min</span>
+        <span class="separator">·</span>
+        <span id="statusText">Idle</span>
+      </div>
+    </div>
+
+    <button id="startBtn" class="btn btn-start">▶ Export All</button>
+    <button id="stopBtn" class="btn btn-stop" hidden>■ Stop</button>
+
+    <p class="hint">Navigate to <a href="https://chatgpt.com" target="_blank">chatgpt.com</a> first and sign in</p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  width: 280px;
+}
+
+.container { padding: 16px; }
+
+h1 { font-size: 16px; font-weight: 600; color: #fff; }
+
+.desc { font-size: 12px; color: #888; margin: 4px 0 12px; }
+
+.progress-section { margin-bottom: 12px; }
+
+.progress-bar {
+  height: 6px;
+  background: #16213e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.stats { font-size: 12px; color: #888; }
+.stats .separator { margin: 0 4px; }
+
+.btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  color: #fff;
+}
+
+.btn-start:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-stop { background: #ef4444; color: #fff; }
+.btn-stop:hover { background: #dc2626; }
+
+.hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
+
+.hint a { color: #10b981; text-decoration: none; }

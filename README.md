@@ -1,48 +1,78 @@
-# ChatGPT Export
+# 💬 ChatGPT Export
 
-Export **all** your ChatGPT conversations to JSON — directly from your browser.
+### Export all your ChatGPT conversations to JSON
 
-No extensions. No API keys. No dependencies. Just one script.
+[![CI](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml/badge.svg)](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/shtse8/chatgpt-export)](https://github.com/shtse8/chatgpt-export/stargazers)
 
-## Why?
+No extensions required. No API keys. No dependencies. Works with **Team/Business** plans that have no built-in export.
 
-- ChatGPT **Team/Business** plans have no built-in export feature
-- The **Compliance API** is Enterprise-only
-- OpenAI support redirects you to tools that don't exist for your plan
-- Your data is yours — you should be able to download it
+## ✨ Why?
 
-## Usage
+- ChatGPT **Team/Business** plans have **no built-in export** feature
+- The Compliance API is **Enterprise-only**
+- OpenAI support redirects you to tools that don't exist
+- **Your data is yours** — you should be able to download it
+
+## 📦 Installation
+
+Choose your preferred method:
+
+### 🧩 Chrome Extension (Recommended)
+
+> Coming soon to Chrome Web Store
+
+For now, install from source:
+1. Download the [latest release ZIP](https://github.com/shtse8/chatgpt-export/releases/latest)
+2. Go to `chrome://extensions/`
+3. Enable **Developer mode** (top right)
+4. Click **Load unpacked** → select the extracted folder
+5. Navigate to [chatgpt.com](https://chatgpt.com) → click the extension icon
+
+### 🐒 Userscript (Tampermonkey / Violentmonkey)
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/)
+2. Click to install: **[chatgpt-export.user.js](https://github.com/shtse8/chatgpt-export/releases/latest/download/chatgpt-export.user.js)**
+3. Navigate to [chatgpt.com](https://chatgpt.com) — a floating widget appears in the bottom-right
+
+### 🔖 Bookmarklet
+
+1. Download [bookmarklet.html](https://github.com/shtse8/chatgpt-export/releases/latest/download/bookmarklet.txt) from the latest release
+2. Create a new bookmark in your browser
+3. Paste the contents as the URL
+4. Click the bookmark while on [chatgpt.com](https://chatgpt.com)
+
+### 📋 Script Injection (Console Paste)
 
 1. Go to [chatgpt.com](https://chatgpt.com) and sign in
-2. Open DevTools: **F12** (or **Cmd+Option+J** on Mac)
-3. Click the **Console** tab
-4. Copy the contents of [`chatgpt-export.js`](./chatgpt-export.js) and paste it
-5. Press **Enter** and wait
-6. A JSON file will automatically download when complete
+2. Open DevTools: **F12** → **Console** tab
+3. Copy the contents of [`inject.js`](https://github.com/shtse8/chatgpt-export/releases/latest/download/inject.js)
+4. Paste and press **Enter**
+5. Wait for the JSON file to auto-download
 
-That's it.
+## 🎯 Features
 
-## Features
-
-- 🔑 **Auto-authentication** — gets your token automatically, no manual copying
+- 🔑 **Auto-authentication** — gets your session token automatically
 - 📄 **Full pagination** — exports all conversations, even thousands
-- 🔄 **Auto-retry** — handles rate limits and temporary errors
-- 🔃 **Token refresh** — automatically refreshes expired tokens mid-export
-- 📊 **Progress tracking** — shows speed and ETA in console
-- 💾 **Metadata** — includes export timestamp, account info, and stats
+- 🔄 **Auto-retry** with exponential backoff on rate limits
+- 🔃 **Token refresh** — handles expired tokens mid-export
+- 📊 **Progress tracking** — speed, count, and status in real-time
+- 💾 **Auto-download** — JSON file saves automatically when done
 - 🛡️ **Error resilient** — continues on failures, reports errors at the end
+- 🎨 **Popup UI** (extension) or **floating widget** (userscript) — no console needed
 
-## Works With
+## 📊 Works With
 
-| Plan | Export Available? | This Tool |
-|------|:-:|:-:|
-| Free | ✅ (Settings → Export) | ✅ |
-| Plus | ✅ (Settings → Export) | ✅ |
+| Plan | Built-in Export? | This Tool |
+|------|:---:|:---:|
+| Free | ✅ | ✅ |
+| Plus | ✅ | ✅ |
 | Team | ❌ | ✅ |
 | Business | ❌ | ✅ |
 | Enterprise | ✅ (Compliance API) | ✅ |
 
-## Output Format
+## 📄 Output Format
 
 ```json
 {
@@ -59,28 +89,76 @@ That's it.
     {
       "title": "My Conversation",
       "create_time": 1700000000,
-      "mapping": { ... }
+      "mapping": { "..." }
     }
   ]
 }
 ```
 
-Each conversation contains the full message tree in `mapping`, including all user messages, assistant responses, system messages, and tool outputs.
+## 🔧 Development
 
-## Notes
+```bash
+# Install dependencies
+bun install
 
-- **Images/files**: The JSON contains URLs to images and uploaded files, not the actual binary data. These URLs may expire after some time.
-- **Duration**: Exporting thousands of conversations may take 30-60+ minutes. Leave the tab open and let it run.
-- **Rate limits**: The script automatically handles rate limiting with exponential backoff.
-- **Token expiry**: Access tokens expire after ~10 days. If your export takes very long, the script will auto-refresh the token.
-- **Large exports**: For very large accounts (10,000+ conversations), the JSON file may be hundreds of MB.
+# Build all formats (extension + standalone + userscript + bookmarklet)
+bun run build
 
-## Legal
+# Type check
+bun run typecheck
 
-This tool accesses your own data through your own authenticated browser session. It does not bypass any security measures — it simply automates what you could do manually by clicking through each conversation.
+# Lint
+bun run lint
 
-Under **GDPR** and **UK GDPR** (Article 15), you have the right to obtain a copy of your personal data. This tool helps you exercise that right.
+# Package extension as ZIP
+bun run package
+```
 
-## License
+### Project Structure
 
-MIT — do whatever you want with it.
+```
+src/
+├── core/           # Shared TypeScript export engine
+│   ├── config.ts
+│   ├── export-engine.ts
+│   └── utils.ts
+├── extension/      # Chrome extension (MV3)
+│   ├── manifest.json
+│   ├── background.ts
+│   ├── content.ts
+│   └── popup/
+├── standalone/     # Console injection IIFE
+│   └── inject.ts
+└── userscript/     # Tampermonkey script with floating UI
+    └── chatgpt-export.user.ts
+```
+
+## 🚀 Releasing
+
+```bash
+# Bump version in package.json, then:
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+GitHub Actions will automatically:
+1. Build all formats
+2. Create a GitHub Release with all artifacts
+3. Upload to Chrome Web Store (if secrets configured)
+
+See [docs/CHROME_WEB_STORE_SETUP.md](docs/CHROME_WEB_STORE_SETUP.md) for CWS setup.
+
+## 📝 Notes
+
+- **Duration**: Exporting thousands of conversations may take 30-60+ minutes
+- **Rate limits**: Handled automatically with exponential backoff
+- **Images/files**: JSON contains URLs (may expire), not binary data
+- **Large exports**: 10,000+ conversations → hundreds of MB
+
+## ⚖️ Legal
+
+This tool accesses your own data through your own authenticated browser session. Under **GDPR** and **UK GDPR** (Article 15), you have the right to obtain a copy of your personal data.
+
+## 📄 License
+
+MIT © [Kyle Tse](https://github.com/shtse8)

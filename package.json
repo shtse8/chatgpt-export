@@ -1,0 +1,23 @@
+{
+  "name": "chatgpt-export",
+  "version": "1.0.0",
+  "description": "Export all your ChatGPT conversations to JSON. Works with Team/Business plans.",
+  "author": "Kyle Tse <shtse8@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "zip": "cd dist/extension && zip -r ../../chatgpt-export.zip .",
+    "package": "bun run build && bun run zip"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.300",
+    "eslint": "^9.0.0",
+    "sharp": "^0.34.5",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^6.1.0"
+  }
+}
