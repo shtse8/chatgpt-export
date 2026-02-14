@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-and-release:
-    name: Build & Release
+    name: Build, Test & Release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +20,12 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
 
       - name: Build all formats
         run: bun run build
