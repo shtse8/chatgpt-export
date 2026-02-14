@@ -8,26 +8,137 @@
 </head>
 <body>
   <div class="container">
-    <h1>💬 ChatGPT Export</h1>
-    <p class="desc">Export all conversations to JSON</p>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-row">
+        <h1>💬 ChatGPT Export</h1>
+        <span class="version" id="version">v2.0.0</span>
+      </div>
+      <p class="tagline">Export conversations in multiple formats</p>
+    </header>
 
-    <div class="progress-section" id="progressSection" hidden>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
+    <!-- Settings Section -->
+    <section class="settings" id="settingsSection">
+      <!-- Format -->
+      <div class="field">
+        <label for="formatSelect">Export Format</label>
+        <select id="formatSelect">
+          <option value="json">JSON</option>
+          <option value="markdown">Markdown</option>
+          <option value="text">Plain Text</option>
+          <option value="html">HTML</option>
+        </select>
       </div>
-      <div class="stats">
-        <span id="downloadedCount">0</span> / <span id="totalCount">0</span>
-        <span class="separator">·</span>
-        <span id="rateText">0/min</span>
-        <span class="separator">·</span>
-        <span id="statusText">Idle</span>
+
+      <!-- Export Scope -->
+      <div class="field">
+        <label>Export Scope</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="scope" value="all" checked>
+            <span>All conversations</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="scope" value="new">
+            <span>New since last export</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="scope" value="search">
+            <span>Search by title</span>
+          </label>
+        </div>
       </div>
+
+      <!-- Search Bar (shown when scope = search) -->
+      <div class="field" id="searchField" hidden>
+        <label for="searchInput">Search Keyword</label>
+        <input type="text" id="searchInput" placeholder="Filter by conversation title...">
+      </div>
+    </section>
+
+    <!-- Progress Section -->
+    <section class="progress-section" id="progressSection" hidden>
+      <!-- Status -->
+      <div class="status-row">
+        <div class="status-indicator" id="statusIndicator">
+          <span class="pulse-dot"></span>
+        </div>
+        <span class="status-text" id="statusText">Idle</span>
+      </div>
+
+      <!-- Current conversation -->
+      <div class="current-title" id="currentTitle" hidden>
+        <span id="currentTitleText"></span>
+      </div>
+
+      <!-- Progress Ring + Stats -->
+      <div class="progress-stats">
+        <div class="progress-ring-container">
+          <svg class="progress-ring" viewBox="0 0 80 80">
+            <circle class="progress-ring-bg" cx="40" cy="40" r="35" />
+            <circle class="progress-ring-fill" id="progressRing" cx="40" cy="40" r="35" />
+          </svg>
+          <div class="progress-ring-text">
+            <span class="progress-pct" id="progressPct">0%</span>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat">
+            <span class="stat-value" id="downloadedCount">0</span>
+            <span class="stat-label">Downloaded</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="totalCount">—</span>
+            <span class="stat-label">Total</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="rateText">—</span>
+            <span class="stat-label">Per min</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="etaText">—</span>
+            <span class="stat-label">ETA</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="elapsedText">0s</span>
+            <span class="stat-label">Elapsed</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="errorCount">0</span>
+            <span class="stat-label">Errors</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Display -->
+    <div class="error-display" id="errorDisplay" hidden>
+      <span class="error-icon">⚠️</span>
+      <span class="error-message" id="errorMessage"></span>
     </div>
 
-    <button id="startBtn" class="btn btn-start">▶ Export All</button>
-    <button id="stopBtn" class="btn btn-stop" hidden>■ Stop</button>
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button id="startBtn" class="btn btn-start">▶ Export</button>
+      <button id="stopBtn" class="btn btn-stop" hidden>■ Stop</button>
+    </div>
 
-    <p class="hint">Navigate to <a href="https://chatgpt.com" target="_blank">chatgpt.com</a> first and sign in</p>
+    <!-- Export History -->
+    <section class="history" id="historySection" hidden>
+      <div class="history-header">Last Export</div>
+      <div class="history-detail">
+        <span id="historyDate">—</span> · 
+        <span id="historyCount">—</span> conversations · 
+        <span id="historyFormat">—</span>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="https://chatgpt.com" target="_blank">chatgpt.com</a>
+      <span class="separator">·</span>
+      <a href="https://github.com/shtse8/chatgpt-export" target="_blank">GitHub</a>
+    </footer>
   </div>
   <script src="popup.js"></script>
 </body>
