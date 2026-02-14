@@ -1,22 +1,33 @@
-import { ExportEngine, downloadJson, type Progress } from '../core'
+import { ExportEngine, downloadExport, type Progress, type Config, type ExportFormat } from '../core'
 
 let engine: ExportEngine | null = null
+let currentConfig: Partial<Config> = {}
 
 const reportProgress = (progress: Progress): void => {
   chrome.runtime.sendMessage({ type: 'progress', data: progress })
-  const { downloaded, total, errors, status, rate } = progress
+  const { downloaded, total, errors, status, rate, eta, currentTitle } = progress
+  const etaStr = eta !== null ? ` ETA ${formatEta(eta)}` : ''
   console.log(
-    `[ChatGPT Export] ${status} — ${downloaded}/${total} downloaded, ${errors} errors, ${rate.toFixed(0)}/min`,
+    `[ChatGPT Export] ${status} — ${downloaded}/${total} downloaded, ${errors} errors, ${rate.toFixed(0)}/min${etaStr}${currentTitle ? ` — ${currentTitle}` : ''}`,
   )
 }
 
-const start = (): void => {
+function formatEta(seconds: number): string {
+  if (seconds <= 0) return '0s'
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return m > 0 ? `${m}m ${s}s` : `${s}s`
+}
+
+const start = (config: Partial<Config> = {}): void => {
   if (engine) {
     console.warn('[ChatGPT Export] Already running — stop first')
     return
   }
 
-  engine = new ExportEngine({}, async (progress) => {
+  currentConfig = config
+
+  engine = new ExportEngine(config, (progress) => {
     reportProgress(progress)
     if (progress.status === 'done' || progress.status === 'error') {
       engine = null
@@ -26,8 +37,8 @@ const start = (): void => {
   console.log('[ChatGPT Export] Starting export...')
   engine.run().then((result) => {
     if (result) {
-      downloadJson(result)
-      console.log(`[ChatGPT Export] ✅ Done! ${result.meta.successful} conversations exported.`)
+      downloadExport(result, currentConfig)
+      console.log(`[ChatGPT Export] ✅ Done! ${result.meta.successful} conversations exported as ${currentConfig.format || 'json'}.`)
     }
   })
 }
@@ -42,7 +53,7 @@ const stop = (): void => {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.action) {
     case 'start':
-      start()
+      start(message.config as Partial<Config> | undefined)
       sendResponse({ ok: true })
       break
     case 'stop':
@@ -55,6 +66,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       break
     case 'status':
       sendResponse({ running: !!engine })
+      break
+    case 'setFormat':
+      currentConfig.format = message.format as ExportFormat
+      sendResponse({ ok: true })
       break
   }
 })
