@@ -1,5 +1,6 @@
 import { type Config, DEFAULT_CONFIG } from './config'
 import { EventEmitter } from './event-emitter'
+import { formatExport, type FormattedFile } from './formatters'
 import { sleep, log, warn, error } from './utils'
 
 export interface ConversationSummary {
@@ -331,18 +332,32 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
   }
 }
 
-/** Download a JSON blob as a file in the browser */
-export function downloadJson(data: ExportResult): void {
-  const json = JSON.stringify(data, null, 2)
-  const sizeMB = (json.length / 1024 / 1024).toFixed(1)
-  const blob = new Blob([json], { type: 'application/json' })
+/** Download a formatted file as a browser download. */
+export function downloadFile(file: FormattedFile): void {
+  const sizeMB = (file.content.length / 1024 / 1024).toFixed(1)
+  const blob = new Blob([file.content], { type: file.mimeType })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `chatgpt-export-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = file.filename
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(a.href)
 
-  log(`💾 File saved: ${a.download} (${sizeMB} MB)`)
+  log(`💾 File saved: ${file.filename} (${sizeMB} MB)`)
+}
+
+/**
+ * Download export data as JSON (legacy convenience function).
+ * @deprecated Use downloadFile(formatExport(data, 'json')) instead.
+ */
+export function downloadJson(data: ExportResult): void {
+  downloadFile(formatExport(data, 'json'))
+}
+
+/** Format and download export data in the configured format. */
+export function downloadExport(data: ExportResult, config: Partial<Config> = {}): void {
+  const format = config.format ?? DEFAULT_CONFIG.format
+  const file = formatExport(data, format)
+  downloadFile(file)
 }

@@ -1,4 +1,5 @@
-export { ExportEngine, downloadJson, type ExportResult, type ExportMeta, type ConversationSummary, type Progress, type ProgressCallback, type ExportEngineEvents } from './export-engine'
+export { ExportEngine, downloadJson, downloadFile, downloadExport, type ExportResult, type ExportMeta, type ConversationSummary, type Progress, type ProgressCallback, type ExportEngineEvents } from './export-engine'
 export { type Config, DEFAULT_CONFIG } from './config'
 export { EventEmitter } from './event-emitter'
 export { sleep, log, warn, error } from './utils'
+export { formatExport, getFormatter, type ExportFormat, type FormattedFile, type Formatter, AVAILABLE_FORMATS, FORMAT_LABELS, FORMAT_EXTENSIONS } from './formatters'
