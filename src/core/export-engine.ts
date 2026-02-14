@@ -19,6 +19,7 @@ export interface ExportMeta {
   successful: number
   errors: number
   export_duration_seconds: number
+  format: string
 }
 
 export interface ExportResult {
@@ -31,8 +32,10 @@ export interface Progress {
   total: number
   downloaded: number
   errors: number
-  rate: number // conversations per minute
+  rate: number
   startedAt: number
+  eta: number | null
+  currentTitle: string
   error?: string
 }
 
@@ -48,7 +51,16 @@ export type ExportEngineEvents = {
 /**
  * Core export engine — fetches all ChatGPT conversations via the backend API.
  *
- * Emits typed events via EventEmitter and also supports a legacy callback.
+ * Features:
+ * - Multiple export formats (JSON, Markdown, Text, HTML)
+ * - Selective export by conversation IDs
+ * - Search/filter by title keyword
+ * - Incremental export (only conversations after a timestamp)
+ * - Concurrent batch downloads with configurable concurrency
+ * - ETA calculation based on download rate
+ * - Exponential backoff with jitter on retries
+ * - Token refresh resilience
+ * - Typed EventEmitter for progress notifications
  */
 export class ExportEngine extends EventEmitter<ExportEngineEvents> {
   private config: Config
@@ -68,6 +80,8 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
       errors: 0,
       rate: 0,
       startedAt: Date.now(),
+      eta: null,
+      currentTitle: '',
     }
   }
 
@@ -77,8 +91,16 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
 
   async run(): Promise<ExportResult | null> {
     this.aborted = false
-    this.progress.startedAt = Date.now()
-    this.progress.status = 'authenticating'
+    this.progress = {
+      status: 'authenticating',
+      total: 0,
+      downloaded: 0,
+      errors: 0,
+      rate: 0,
+      startedAt: Date.now(),
+      eta: null,
+      currentTitle: '',
+    }
     this.emitProgress()
 
     try {
@@ -86,14 +108,31 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
       const session = await this.getSession()
       if (!session) return null
 
-      // Step 2: List all conversations
+      // Step 2: List conversations (with filtering)
       this.progress.status = 'listing'
       this.emitProgress()
-      const conversations = await this.listAll()
+
+      let conversations: ConversationSummary[]
+
+      if (this.config.conversationIds.length > 0) {
+        // Selective export — use provided IDs directly
+        conversations = this.config.conversationIds.map(id => ({
+          id,
+          title: '',
+          create_time: 0,
+          update_time: 0,
+        }))
+        log(`📊 Selective export: ${conversations.length} conversations`)
+      } else {
+        // Full list with optional filtering
+        conversations = await this.listAll()
+        conversations = this.filterConversations(conversations)
+      }
+
       this.progress.total = conversations.length
 
       if (conversations.length === 0) {
-        warn('No conversations found.')
+        warn('No conversations found matching criteria.')
         this.progress.status = 'done'
         this.emitProgress()
         return null
@@ -101,10 +140,10 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
 
       log(`📊 Total: ${conversations.length} conversations to export`)
 
-      // Step 3: Download each conversation
+      // Step 3: Download conversations (concurrently)
       this.progress.status = 'downloading'
       this.emitProgress()
-      const results = await this.downloadAll(conversations)
+      const results = await this.downloadAllConcurrent(conversations)
 
       // Step 4: Build export
       const elapsed = (Date.now() - this.progress.startedAt) / 1000
@@ -119,11 +158,13 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
           successful: this.progress.downloaded,
           errors: this.progress.errors,
           export_duration_seconds: parseFloat(elapsed.toFixed(1)),
+          format: this.config.format,
         },
         conversations: results,
       }
 
       this.progress.status = 'done'
+      this.progress.eta = 0
       this.emitProgress()
       this.emit('done', exportData)
 
@@ -176,7 +217,6 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
 
         if (res.ok) return res
 
-        // Token expired — attempt refresh (up to once per retry cycle)
         if (res.status === 401) {
           warn('Token expired, refreshing...')
           const refreshed = await this.refreshToken()
@@ -184,10 +224,8 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
             log('Token refreshed')
             continue
           }
-          // If refresh failed, fall through to retry delay
         }
 
-        // Rate limit — respect Retry-After header if present
         if (res.status === 429) {
           const retryAfter = res.headers.get('retry-after')
           const wait = retryAfter
@@ -198,7 +236,6 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
           continue
         }
 
-        // Other server errors — retry with backoff
         if (res.status >= 500 && attempt < this.config.retryAttempts - 1) {
           const wait = this.backoffDelay(attempt)
           warn(`Server error ${res.status}, retrying in ${(wait / 1000).toFixed(1)}s...`)
@@ -206,7 +243,6 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
           continue
         }
 
-        // Non-retryable error or final attempt
         return res
       } catch (e) {
         if (attempt < this.config.retryAttempts - 1) {
@@ -246,6 +282,30 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
     }
   }
 
+  // --- Filtering ---
+
+  private filterConversations(conversations: ConversationSummary[]): ConversationSummary[] {
+    let filtered = conversations
+
+    // Filter by search query (title keyword)
+    if (this.config.searchQuery) {
+      const query = this.config.searchQuery.toLowerCase()
+      filtered = filtered.filter(c =>
+        (c.title || '').toLowerCase().includes(query),
+      )
+      log(`🔍 Search "${this.config.searchQuery}": ${filtered.length} matches`)
+    }
+
+    // Filter by timestamp (incremental export)
+    if (this.config.afterTimestamp !== null) {
+      const afterSec = this.config.afterTimestamp / 1000 // convert ms to seconds
+      filtered = filtered.filter(c => c.update_time > afterSec)
+      log(`📅 After ${new Date(this.config.afterTimestamp).toISOString().slice(0, 10)}: ${filtered.length} matches`)
+    }
+
+    return filtered
+  }
+
   // --- List all conversations ---
 
   private async listAll(): Promise<ConversationSummary[]> {
@@ -270,59 +330,81 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
     return all
   }
 
-  // --- Download all conversations ---
+  // --- Download conversations concurrently ---
 
-  private async downloadAll(conversations: ConversationSummary[]): Promise<unknown[]> {
-    log('⬇️  Downloading conversations...')
-    const results: unknown[] = []
+  private async downloadAllConcurrent(conversations: ConversationSummary[]): Promise<unknown[]> {
+    log(`⬇️  Downloading ${conversations.length} conversations (concurrency: ${this.config.concurrency})...`)
+    const results: unknown[] = new Array(conversations.length)
+    let nextIndex = 0
 
-    for (let i = 0; i < conversations.length; i++) {
-      if (this.aborted) break
+    const worker = async (): Promise<void> => {
+      while (!this.aborted) {
+        const index = nextIndex++
+        if (index >= conversations.length) break
 
-      const convo = conversations[i]
+        const convo = conversations[index]
+        this.progress.currentTitle = convo.title || convo.id
 
-      try {
-        const res = await this.fetchWithRetry(`/backend-api/conversation/${convo.id}`)
+        try {
+          const res = await this.fetchWithRetry(`/backend-api/conversation/${convo.id}`)
 
-        if (res.ok) {
-          results.push(await res.json())
-          this.progress.downloaded++
-        } else {
-          warn(`[${i + 1}/${conversations.length}] ${convo.title || convo.id} → HTTP ${res.status}`)
-          results.push({
+          if (res.ok) {
+            results[index] = await res.json()
+            this.progress.downloaded++
+          } else {
+            warn(`[${index + 1}/${conversations.length}] ${convo.title || convo.id} → HTTP ${res.status}`)
+            results[index] = {
+              id: convo.id,
+              title: convo.title,
+              error: `HTTP ${res.status}`,
+              create_time: convo.create_time,
+              update_time: convo.update_time,
+            }
+            this.progress.errors++
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e)
+          warn(`[${index + 1}/${conversations.length}] ${convo.title || convo.id} → ${msg}`)
+          results[index] = {
             id: convo.id,
             title: convo.title,
-            error: `HTTP ${res.status}`,
+            error: msg,
             create_time: convo.create_time,
             update_time: convo.update_time,
-          })
+          }
           this.progress.errors++
         }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        warn(`[${i + 1}/${conversations.length}] ${convo.title || convo.id} → ${msg}`)
-        results.push({
-          id: convo.id,
-          title: convo.title,
-          error: msg,
-          create_time: convo.create_time,
-          update_time: convo.update_time,
-        })
-        this.progress.errors++
-      }
 
-      // Update rate
-      const elapsed = (Date.now() - this.progress.startedAt) / 1000
-      this.progress.rate = elapsed > 0 ? ((i + 1) / elapsed) * 60 : 0
-      this.emitProgress()
+        // Update rate and ETA
+        this.updateRateAndEta()
+        this.emitProgress()
 
-      // Rate limiting
-      if (i % this.config.downloadBatch === 0) {
+        // Rate limiting delay between downloads
         await sleep(this.config.downloadDelay)
       }
     }
 
+    // Launch concurrent workers
+    const workers: Promise<void>[] = []
+    for (let i = 0; i < this.config.concurrency; i++) {
+      workers.push(worker())
+    }
+    await Promise.all(workers)
+
     return results
+  }
+
+  /** Update download rate and ETA based on progress. */
+  private updateRateAndEta(): void {
+    const elapsed = (Date.now() - this.progress.startedAt) / 1000
+    const completed = this.progress.downloaded + this.progress.errors
+
+    if (elapsed > 0 && completed > 0) {
+      this.progress.rate = (completed / elapsed) * 60 // per minute
+      const remaining = this.progress.total - completed
+      const secondsPerItem = elapsed / completed
+      this.progress.eta = Math.ceil(remaining * secondsPerItem)
+    }
   }
 
   private emitProgress(): void {
