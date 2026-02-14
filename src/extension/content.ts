@@ -61,7 +61,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ ok: true })
       break
     case 'toggle':
-      engine ? stop() : start()
+      if (engine) { stop() } else { start() }
       sendResponse({ ok: true })
       break
     case 'status':
