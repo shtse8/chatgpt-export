@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Export",
-  "version": "1.0.0",
-  "description": "Export all your ChatGPT conversations to JSON. Works with Team/Business plans that have no built-in export.",
+  "version": "2.0.0",
+  "description": "Export all your ChatGPT conversations to JSON, Markdown, Text, or HTML. Works with Team/Business plans.",
   "permissions": ["activeTab", "storage"],
   "host_permissions": ["https://chatgpt.com/*"],
   "background": {
