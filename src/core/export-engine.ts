@@ -166,41 +166,52 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
     return { token, accountId, planType, email }
   }
 
-  // --- Fetch with retry ---
+  // --- Fetch with retry (exponential backoff + jitter) ---
 
   private async fetchWithRetry(url: string): Promise<Response> {
-    for (let i = 0; i < this.config.retryAttempts; i++) {
+    for (let attempt = 0; attempt < this.config.retryAttempts; attempt++) {
       try {
         const res = await fetch(url, { headers: this.headers })
 
         if (res.ok) return res
 
+        // Token expired — attempt refresh (up to once per retry cycle)
         if (res.status === 401) {
           warn('Token expired, refreshing...')
-          const newSession = await fetch('/api/auth/session').then(r => r.json())
-          if (newSession.accessToken) {
-            this.headers.authorization = `Bearer ${newSession.accessToken}`
+          const refreshed = await this.refreshToken()
+          if (refreshed) {
             log('Token refreshed')
             continue
           }
+          // If refresh failed, fall through to retry delay
         }
 
+        // Rate limit — respect Retry-After header if present
         if (res.status === 429) {
-          const wait = Math.pow(2, i) * this.config.retryDelay
-          warn(`Rate limited, waiting ${wait / 1000}s...`)
+          const retryAfter = res.headers.get('retry-after')
+          const wait = retryAfter
+            ? parseInt(retryAfter, 10) * 1000
+            : this.backoffDelay(attempt)
+          warn(`Rate limited, waiting ${(wait / 1000).toFixed(1)}s...`)
           await sleep(wait)
           continue
         }
 
-        if (i < this.config.retryAttempts - 1) {
-          await sleep(this.config.retryDelay)
+        // Other server errors — retry with backoff
+        if (res.status >= 500 && attempt < this.config.retryAttempts - 1) {
+          const wait = this.backoffDelay(attempt)
+          warn(`Server error ${res.status}, retrying in ${(wait / 1000).toFixed(1)}s...`)
+          await sleep(wait)
           continue
         }
 
+        // Non-retryable error or final attempt
         return res
       } catch (e) {
-        if (i < this.config.retryAttempts - 1) {
-          await sleep(this.config.retryDelay)
+        if (attempt < this.config.retryAttempts - 1) {
+          const wait = this.backoffDelay(attempt)
+          warn(`Network error, retrying in ${(wait / 1000).toFixed(1)}s...`)
+          await sleep(wait)
           continue
         }
         throw e
@@ -208,6 +219,30 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
     }
 
     throw new Error('Max retries exceeded')
+  }
+
+  /** Exponential backoff with jitter: base * 2^attempt + random jitter */
+  private backoffDelay(attempt: number): number {
+    const base = this.config.retryDelay * Math.pow(2, attempt)
+    const jitter = Math.random() * this.config.retryDelay * 0.5
+    return base + jitter
+  }
+
+  /** Attempt to refresh the session token. Returns true on success. */
+  private async refreshToken(): Promise<boolean> {
+    try {
+      const res = await fetch('/api/auth/session')
+      if (!res.ok) return false
+      const session = await res.json()
+      if (!session.accessToken) return false
+      this.headers.authorization = `Bearer ${session.accessToken}`
+      if (session.account?.id) {
+        this.headers['chatgpt-account-id'] = session.account.id
+      }
+      return true
+    } catch {
+      return false
+    }
   }
 
   // --- List all conversations ---
