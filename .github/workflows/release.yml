@@ -53,18 +53,23 @@ jobs:
 
       # Chrome Web Store publish (requires secrets — see docs/CHROME_WEB_STORE_SETUP.md)
       - name: Publish to Chrome Web Store
-        if: ${{ secrets.CHROME_EXTENSION_ID != '' }}
+        if: env.CHROME_EXTENSION_ID != ''
         continue-on-error: true
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
         run: |
           bunx chrome-webstore-upload-cli upload \
             --source chatgpt-export.zip \
-            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
-            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
-            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
-            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+            --extension-id "$CHROME_EXTENSION_ID" \
+            --client-id "$CHROME_CLIENT_ID" \
+            --client-secret "$CHROME_CLIENT_SECRET" \
+            --refresh-token "$CHROME_REFRESH_TOKEN"
 
           bunx chrome-webstore-upload-cli publish \
-            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
-            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
-            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
-            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }}
+            --extension-id "$CHROME_EXTENSION_ID" \
+            --client-id "$CHROME_CLIENT_ID" \
+            --client-secret "$CHROME_CLIENT_SECRET" \
+            --refresh-token "$CHROME_REFRESH_TOKEN"
