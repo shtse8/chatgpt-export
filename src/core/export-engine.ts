@@ -322,6 +322,11 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
 
       all.push(...data.items)
       offset += data.items.length
+
+      // Update progress so the popup shows listing progress in real-time
+      this.progress.total = all.length
+      this.emitProgress()
+
       log(`  Found ${all.length} conversations so far...`)
 
       await sleep(this.config.listDelay)

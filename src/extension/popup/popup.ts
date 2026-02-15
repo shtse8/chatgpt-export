@@ -210,20 +210,30 @@ chrome.runtime.onMessage.addListener(async (message) => {
 
   const { downloaded, total, rate, status, eta, errors, error: errorMsg, currentTitle: title } = message.data
 
-  // Progress percentage
-  const pct = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0
-  progressPct.textContent = `${Math.round(pct)}%`
+  if (status === 'listing') {
+    // During listing phase, show found count in the ring instead of percentage
+    progressPct.textContent = String(total)
+    progressRing.style.strokeDashoffset = String(RING_CIRCUMFERENCE) // empty ring (indeterminate)
 
-  // Progress ring
-  const offset = RING_CIRCUMFERENCE - (pct / 100) * RING_CIRCUMFERENCE
-  progressRing.style.strokeDashoffset = String(offset)
+    downloadedCount.textContent = '—'
+    totalCount.textContent = total > 0 ? String(total) : '…'
+    rateText.textContent = '—'
+    etaText.textContent = '—'
+    errorCount.textContent = String(errors)
+  } else {
+    // Normal progress display (downloading, saving, done, etc.)
+    const pct = total > 0 ? Math.min(100, (downloaded / total) * 100) : 0
+    progressPct.textContent = `${Math.round(pct)}%`
 
-  // Stats
-  downloadedCount.textContent = String(downloaded)
-  totalCount.textContent = total > 0 ? String(total) : '—'
-  rateText.textContent = rate > 0 ? rate.toFixed(0) : '—'
-  etaText.textContent = formatEtaDisplay(eta)
-  errorCount.textContent = String(errors)
+    const offset = RING_CIRCUMFERENCE - (pct / 100) * RING_CIRCUMFERENCE
+    progressRing.style.strokeDashoffset = String(offset)
+
+    downloadedCount.textContent = String(downloaded)
+    totalCount.textContent = total > 0 ? String(total) : '—'
+    rateText.textContent = rate > 0 ? rate.toFixed(0) : '—'
+    etaText.textContent = formatEtaDisplay(eta)
+    errorCount.textContent = String(errors)
+  }
 
   // Status text
   statusText.textContent = STATUS_MAP[status] ?? status
