@@ -1,6 +1,6 @@
 {
   "name": "chatgpt-export",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Export all your ChatGPT conversations to JSON, Markdown, Text, or HTML. Works with Team/Business plans.",
   "author": "Kyle Tse <shtse8@gmail.com>",
   "license": "MIT",
