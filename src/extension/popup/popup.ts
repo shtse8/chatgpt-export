@@ -15,6 +15,7 @@ const currentTitleText = document.getElementById('currentTitleText') as HTMLSpan
 const progressRing = document.getElementById('progressRing') as unknown as SVGCircleElement
 const progressPct = document.getElementById('progressPct') as HTMLSpanElement
 const downloadedCount = document.getElementById('downloadedCount') as HTMLSpanElement
+const downloadedLabel = document.getElementById('downloadedLabel') as HTMLSpanElement
 const totalCount = document.getElementById('totalCount') as HTMLSpanElement
 const rateText = document.getElementById('rateText') as HTMLSpanElement
 const etaText = document.getElementById('etaText') as HTMLSpanElement
@@ -216,6 +217,7 @@ chrome.runtime.onMessage.addListener(async (message) => {
     progressRing.style.strokeDashoffset = String(RING_CIRCUMFERENCE) // empty ring (indeterminate)
 
     downloadedCount.textContent = '—'
+    downloadedLabel.textContent = 'Found'
     totalCount.textContent = total > 0 ? String(total) : '…'
     rateText.textContent = '—'
     etaText.textContent = '—'
@@ -229,6 +231,7 @@ chrome.runtime.onMessage.addListener(async (message) => {
     progressRing.style.strokeDashoffset = String(offset)
 
     downloadedCount.textContent = String(downloaded)
+    downloadedLabel.textContent = 'Downloaded'
     totalCount.textContent = total > 0 ? String(total) : '—'
     rateText.textContent = rate > 0 ? rate.toFixed(0) : '—'
     etaText.textContent = formatEtaDisplay(eta)
@@ -258,6 +261,8 @@ chrome.runtime.onMessage.addListener(async (message) => {
   if (status === 'error' && errorMsg) {
     errorDisplay.hidden = false
     errorMessage.textContent = errorMsg
+  } else if (status !== 'error') {
+    errorDisplay.hidden = true
   }
 
   // Export complete
@@ -301,6 +306,11 @@ async function init(): Promise<void> {
     radio.checked = radio.value === prefs.scope
   }
   onScopeChange()
+
+  // Set version from manifest
+  const manifest = chrome.runtime.getManifest()
+  const versionEl = document.getElementById('version')
+  if (versionEl) versionEl.textContent = `v${manifest.version}`
 
   // Check if already running
   const res = await sendToContent({ action: 'status' })
