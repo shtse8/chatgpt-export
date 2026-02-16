@@ -49,6 +49,7 @@ interface StoredPrefs {
   lastExportCount: number | null
   lastExportFormat: string | null
   lastExportTimestamp: number | null
+  startedAt: number | null
 }
 
 const DEFAULT_PREFS: StoredPrefs = {
@@ -59,6 +60,7 @@ const DEFAULT_PREFS: StoredPrefs = {
   lastExportCount: null,
   lastExportFormat: null,
   lastExportTimestamp: null,
+  startedAt: null,
 }
 
 async function loadPrefs(): Promise<StoredPrefs> {
@@ -98,10 +100,23 @@ function setRunning(running: boolean): void {
 
   if (running) {
     errorDisplay.hidden = true
-    startedAt = Date.now()
-    startElapsedTimer()
+    if (startedAt <= 0) {
+      // Load from storage if not already set
+      chrome.storage.local.get({ startedAt: null }, (items) => {
+        if (items.startedAt) startedAt = items.startedAt
+        else {
+          startedAt = Date.now()
+          chrome.storage.local.set({ startedAt })
+        }
+        startElapsedTimer()
+      })
+    } else {
+      startElapsedTimer()
+    }
   } else {
     stopElapsedTimer()
+    startedAt = 0
+    chrome.storage.local.set({ startedAt: null })
   }
 }
 
@@ -184,6 +199,8 @@ startBtn.addEventListener('click', async () => {
   }
 
   await sendToContent({ action: 'start', config })
+  startedAt = Date.now()
+  await chrome.storage.local.set({ startedAt })
   setRunning(true)
 })
 
@@ -315,6 +332,10 @@ async function init(): Promise<void> {
   // Check if already running
   const res = await sendToContent({ action: 'status' })
   if (res && (res as { running: boolean }).running) {
+    const runPrefs = await loadPrefs()
+    if (runPrefs.startedAt) {
+      startedAt = runPrefs.startedAt
+    }
     setRunning(true)
   }
 
