@@ -1,5 +1,10 @@
 # 💬 ChatGPT Export
 
+<p align="center">
+  <img src="docs/banner.png" alt="chatgpt-export banner" width="100%" />
+</p>
+
+
 ### Export all your ChatGPT conversations — JSON, Markdown, Text, or HTML
 
 [![CI](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml/badge.svg)](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml)
