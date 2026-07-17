@@ -1,9 +1,8 @@
 # 💬 ChatGPT Export
 
 <p align="center">
-  <img src="docs/banner.png" alt="chatgpt-export banner" width="100%" />
+  <img src="https://mark.sylphx.com/api/v1/banner?type=constellation&theme=tokyonight&text=chatgpt+export&desc=Export+all+your+ChatGPT+conversations+to+JSON.+No+extensions%2C+no+API+keys%2C+no+de&height=200&animation=rise&credit=0" alt="chatgpt-export — Sylphx Mark banner" width="100%" />
 </p>
-
 
 ### Export all your ChatGPT conversations — JSON, Markdown, Text, or HTML
 
