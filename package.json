@@ -14,7 +14,7 @@
     "package": "bun run build && bun run zip"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.300",
+    "@types/chrome": "^0.2.0",
     "eslint": "^9.0.0",
     "sharp": "^0.34.5",
     "typescript": "^5.7.0",
