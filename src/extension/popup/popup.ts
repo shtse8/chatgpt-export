@@ -65,8 +65,8 @@ const DEFAULT_PREFS: StoredPrefs = {
 
 async function loadPrefs(): Promise<StoredPrefs> {
   return new Promise((resolve) => {
-    chrome.storage.local.get(DEFAULT_PREFS, (items) => {
-      resolve(items as StoredPrefs)
+    chrome.storage.local.get<StoredPrefs>(DEFAULT_PREFS, (items) => {
+      resolve(items)
     })
   })
 }
@@ -102,7 +102,7 @@ function setRunning(running: boolean): void {
     errorDisplay.hidden = true
     if (startedAt <= 0) {
       // Load from storage if not already set
-      chrome.storage.local.get({ startedAt: null }, (items) => {
+      chrome.storage.local.get<{ startedAt: number | null }>({ startedAt: null }, (items) => {
         if (items.startedAt) startedAt = items.startedAt
         else {
           startedAt = Date.now()
