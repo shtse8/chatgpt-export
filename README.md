@@ -4,15 +4,13 @@
   <img src="https://mark.sylphx.com/api/v1/mark/hero?type=constellation&theme=tokyonight&text=chatgpt+export&desc=Export+all+your+ChatGPT+conversations+to+JSON.+No+extensions%2C+no+API+keys%2C+no+dependencies%E2%80%A6&height=200&animation=rise" alt="chatgpt-export — Sylphx Mark banner" width="100%" />
 </p>
 
-### Export all your ChatGPT conversations — JSON, Markdown, Text, or HTML
-
 [![CI](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml/badge.svg)](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml)
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/elkdhnegeooliobekanjpdifoaoolbbf?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/chatgpt-export/elkdhnegeooliobekanjpdifoaoolbbf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![GitHub stars](https://img.shields.io/github/stars/shtse8/chatgpt-export)](https://github.com/shtse8/chatgpt-export/stargazers)
 
-No API keys. No external servers. No dependencies. Works with **Team/Business** plans that have no built-in export. Your data stays in your browser.
+Export every ChatGPT conversation you have to JSON, Markdown, plain text or HTML, in one click. It works on **Team and Business** plans, which have no built-in export. It runs in your browser with your existing sign-in: no API key, and nothing is sent anywhere else.
 
 ---
 
@@ -40,7 +38,7 @@ No API keys. No external servers. No dependencies. Works with **Team/Business** 
 | **JSON** | `.json` | Data analysis, programmatic processing, full fidelity |
 | **Markdown** | `.md` | Reading, documentation, version control |
 | **Plain Text** | `.txt` | Simple archival, universal compatibility |
-| **HTML** | `.html` | Beautiful viewing in browser, sharing, printing |
+| **HTML** | `.html` | Reading in a browser, sharing, printing |
 
 The HTML export is self-contained with inline CSS and supports both dark and light mode.
 
@@ -133,7 +131,7 @@ const engine = new ExportEngine({
 ## ❓ FAQ
 
 **Does it work with ChatGPT Teams/Business?**
-Yes! That's the primary use case. Team and Business plans have no built-in export feature.
+Yes, that is the main use case. Team and Business plans have no built-in export feature.
 
 **Does it send my data to any external server?**
 No. Everything runs locally in your browser. No data leaves your machine. See our [Privacy Policy](PRIVACY.md).
@@ -148,7 +146,7 @@ Yes. Use the "Search by title" option in the extension, or pass `conversationIds
 The JSON export contains URLs to attached files. These URLs may expire over time. Binary content is not embedded.
 
 **Will it work if ChatGPT changes their API?**
-The tool uses ChatGPT's internal API. If they change it, we'll update. Star the repo to stay notified.
+The tool uses the same private API as the ChatGPT website, so a change on their side can break it until the tool is updated. Watch the repository's releases to hear about fixes.
 
 ## 🔧 Development
 
