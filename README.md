@@ -1,14 +1,14 @@
 # 💬 ChatGPT Export
 
 <p align="center">
-  <img src="https://mark.sylphx.com/api/v1/mark/hero?type=constellation&theme=tokyonight&text=chatgpt+export&desc=Export+all+your+ChatGPT+conversations+to+JSON.+No+extensions%2C+no+API+keys%2C+no+dependencies%E2%80%A6&height=200&animation=rise" alt="chatgpt-export — Sylphx Mark banner" width="100%" />
+  <img src="https://mark.sylphx.com/api/v1/mark/hero.svg?type=waving&theme=dark&text=ChatGPT%20Export&desc=Export%20every%20ChatGPT%20conversation" alt="ChatGPT Export" width="100%" />
 </p>
 
 [![CI](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml/badge.svg)](https://github.com/shtse8/chatgpt-export/actions/workflows/ci.yml)
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/elkdhnegeooliobekanjpdifoaoolbbf?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/chatgpt-export/elkdhnegeooliobekanjpdifoaoolbbf)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![GitHub stars](https://img.shields.io/github/stars/shtse8/chatgpt-export)](https://github.com/shtse8/chatgpt-export/stargazers)
+[![License: MIT](https://mark.sylphx.com/badge/License-MIT-green.svg)](LICENSE)
+[![TypeScript](https://mark.sylphx.com/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![GitHub stars](https://mark.sylphx.com/github/stars/shtse8/chatgpt-export)](https://github.com/shtse8/chatgpt-export/stargazers)
 
 Export every ChatGPT conversation you have to JSON, Markdown, plain text or HTML, in one click. It works on **Team and Business** plans, which have no built-in export. It runs in your browser with your existing sign-in: no API key, and nothing is sent anywhere else.
 
