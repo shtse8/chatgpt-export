@@ -316,9 +316,25 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
     while (!this.aborted) {
       const url = `/backend-api/conversations?offset=${offset}&limit=${this.config.batchSize}&order=updated`
       const res = await this.fetchWithRetry(url)
-      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(`Could not list conversations (HTTP ${res.status}). No export was saved.`)
+      }
 
-      if (!data.items || data.items.length === 0) break
+      let data: unknown
+      try {
+        data = await res.json()
+      } catch {
+        throw new Error('Could not list conversations: invalid JSON response. No export was saved.')
+      }
+
+      if (!data || typeof data !== 'object' || !('items' in data) || !Array.isArray(data.items)
+        || data.items.some(item => !item || typeof item !== 'object'
+          || typeof item.id !== 'string' || item.id.trim().length === 0)) {
+        throw new Error('Could not list conversations: invalid conversation list. No export was saved.')
+      }
+
+      // Only an explicit, valid empty page marks the end of the collection.
+      if (data.items.length === 0) break
 
       // A large page must not become a single call with unbounded arguments.
       for (const item of data.items) all.push(item)
