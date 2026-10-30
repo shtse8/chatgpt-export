@@ -4,7 +4,7 @@ One-time setup to enable automatic publishing via GitHub Actions.
 
 ## What You Need
 
-After this guide, you'll have 4 secrets to add to your GitHub repo:
+Configure these four secrets in the GitHub repository:
 
 | Secret | What it is |
 |--------|-----------|
@@ -17,7 +17,7 @@ After this guide, you'll have 4 secrets to add to your GitHub repo:
 
 Your extension ID is in the Chrome Web Store URL:
 ```
-https://chromewebstore.google.com/detail/google-photos-delete-tool/jiahfbbfpacpolomdjlpdpiljllcdenb
+https://chromewebstore.google.com/detail/chatgpt-export/elkdhnegeooliobekanjpdifoaoolbbf
                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                                                                     This is your EXTENSION_ID
 ```
@@ -82,10 +82,14 @@ This opens a browser flow and outputs all 3 values automatically.
 
 1. Go to your GitHub repo → **Settings → Secrets and variables → Actions**
 2. Click **New repository secret** for each:
-   - `CHROME_EXTENSION_ID` = `jiahfbbfpacpolomdjlpdpiljllcdenb`
+   - `CHROME_EXTENSION_ID` = `elkdhnegeooliobekanjpdifoaoolbbf`
    - `CHROME_CLIENT_ID` = (from Step 4)
    - `CHROME_CLIENT_SECRET` = (from Step 4)
    - `CHROME_REFRESH_TOKEN` = (from Step 5)
+
+Also add the non-secret **Actions variable** `CWS_PUBLISHER_ID`: copy the publisher ID from the Chrome Web Store developer dashboard URL. The current API requires it in addition to the extension ID.
+
+The workflow passes OAuth credentials through `CLIENT_ID`, `CLIENT_SECRET` and `REFRESH_TOKEN` environment variables. The current publishing CLI rejects credential command-line flags.
 
 ## Step 7: Test It
 
@@ -119,6 +123,8 @@ Check the **Actions** tab in your repo to see the workflow run.
 ### "Item not found"
 - Double-check your `CHROME_EXTENSION_ID` matches exactly
 
+For an existing tag, use the Release workflow's manual `tag` input. It checks out and builds that tag while retaining the current publication tooling. The workflow reads live store status first, skips a version already published or awaiting review, and stops if another submission is in flight. Publishing failures fail the job; the GitHub Release remains available separately. A successful submission is not proof that store review is complete.
+
 ## How the Release Workflow Works
 
 ```
@@ -146,7 +152,7 @@ git tag v1.2.0 && git push --tags
 └────────┘ └──────────────────┘
 ```
 
-If CWS secrets are not configured, the workflow still creates the GitHub Release — CWS publishing is optional and won't fail the build.
+If CWS secrets are not configured, the workflow still creates the GitHub Release — the store step is skipped. When configured, a failed store submission fails the job.
 
 ## Important Notes
 
