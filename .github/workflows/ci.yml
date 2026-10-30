@@ -43,7 +43,9 @@ jobs:
       - name: Build
         run: bun run build
 
+      # Release builds independently; this CI bundle is diagnostic only.
       - name: Upload extension artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: chrome-extension
