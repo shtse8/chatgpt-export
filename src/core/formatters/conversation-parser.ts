@@ -2,8 +2,8 @@
  * Parse a ChatGPT conversation object into a flat list of messages.
  *
  * ChatGPT conversations use a tree/mapping structure where each node
- * has a parent pointer. This utility walks the tree to produce a
- * linear message list in chronological order.
+ * has a parent pointer. This utility walks reachable nodes in stable
+ * breadth-first order to produce a linear message list.
  */
 
 export interface ParsedMessage {
@@ -79,13 +79,13 @@ export function parseConversation(convo: unknown): ParsedConversation {
 
   if (!rootNode) return result
 
-  // Walk the tree depth-first, following the last child at each level
-  // (ChatGPT conversations are typically linear — one path)
+  // Use an indexed FIFO: removing the first item repeatedly copies a wide
+  // frontier, while a cursor keeps traversal linear in nodes and child links.
   const visited = new Set<string>()
   const queue: string[] = [rootNode.id]
 
-  while (queue.length > 0) {
-    const nodeId = queue.shift()!
+  for (let head = 0; head < queue.length; head++) {
+    const nodeId = queue[head]
     if (visited.has(nodeId)) continue
     visited.add(nodeId)
 
@@ -107,9 +107,10 @@ export function parseConversation(convo: unknown): ParsedConversation {
       }
     }
 
-    // Add children to queue
+    // Append individually: spreading a large branch exceeds the runtime's
+    // function-argument limit even when the conversation fits in memory.
     if (node.children) {
-      queue.push(...node.children)
+      for (const childId of node.children) queue.push(childId)
     }
   }
 

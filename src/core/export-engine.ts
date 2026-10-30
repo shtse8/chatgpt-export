@@ -320,7 +320,8 @@ export class ExportEngine extends EventEmitter<ExportEngineEvents> {
 
       if (!data.items || data.items.length === 0) break
 
-      all.push(...data.items)
+      // A large page must not become a single call with unbounded arguments.
+      for (const item of data.items) all.push(item)
       offset += data.items.length
 
       // Update progress so the popup shows listing progress in real-time
