@@ -94,7 +94,7 @@ function createWidget(): void {
     const running = !['idle', 'done', 'error'].includes(p.status)
     startBtn.style.display = running ? 'none' : 'block'
     stopBtn.style.display = running ? 'block' : 'none'
-    progress.style.display = p.total > 0 || running ? 'block' : 'none'
+    progress.style.display = p.total > 0 || running || p.status === 'error' ? 'block' : 'none'
     formatSelect.disabled = running
 
     if (p.total > 0) {
