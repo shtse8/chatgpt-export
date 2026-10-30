@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release'
-        required: false
+        description: 'Existing release tag (for example v2.1.3)'
+        required: true
 
 permissions:
   contents: write
@@ -20,6 +20,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      # Preserve publication tooling from this workflow revision when rebuilding an older tag.
+      - name: Retain store status checker
+        run: cp scripts/chrome-webstore-status.mjs "$RUNNER_TEMP/chrome-webstore-status.mjs"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -43,7 +51,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: |
             chatgpt-export.zip
             dist/standalone/inject.js
@@ -51,25 +59,13 @@ jobs:
             dist/bookmarklet/bookmarklet.txt
           generate_release_notes: true
 
-      # Chrome Web Store publish (requires secrets — see docs/CHROME_WEB_STORE_SETUP.md)
+      # Keep credentials in the environment; recent CLI releases reject secret flags.
       - name: Publish to Chrome Web Store
-        if: env.CHROME_EXTENSION_ID != ''
-        continue-on-error: true
+        if: env.EXTENSION_ID != ''
         env:
-          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-        run: |
-          bunx chrome-webstore-upload-cli upload \
-            --source chatgpt-export.zip \
-            --extension-id "$CHROME_EXTENSION_ID" \
-            --client-id "$CHROME_CLIENT_ID" \
-            --client-secret "$CHROME_CLIENT_SECRET" \
-            --refresh-token "$CHROME_REFRESH_TOKEN"
-
-          bunx chrome-webstore-upload-cli publish \
-            --extension-id "$CHROME_EXTENSION_ID" \
-            --client-id "$CHROME_CLIENT_ID" \
-            --client-secret "$CHROME_CLIENT_SECRET" \
-            --refresh-token "$CHROME_REFRESH_TOKEN"
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: node "$RUNNER_TEMP/chrome-webstore-status.mjs" --publish
